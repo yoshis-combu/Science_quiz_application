@@ -627,16 +627,22 @@
       return { picked: picked, nextState: { round: round, deck: remaining } };
     }
 
-    // deck 不足 -> 残りを全部出し、新しい周のプールから補充
+    // deck 不足 -> 前周の残り全部を出し、新しい周のプールから不足分を補充する。
+    // 新しい周の deck は「全問 − 今回補充に使った問題」とし、前周の残り（pickedAll）も含める。
+    // こうすることで、新しい周を構成する問題（pickedAll + 新規補充分）は
+    // その周の中でちょうど1回ずつ出題される。
     var pickedAll = deck.slice();
     var pickedAllSet = {};
     pickedAll.forEach(function (id) { pickedAllSet[id] = true; });
     var needed = n - pickedAll.length;
 
-    var newRoundPool = shuffle(ids.filter(function (id) { return !pickedAllSet[id]; }), rng);
-    var supplement = newRoundPool.slice(0, Math.min(needed, newRoundPool.length));
+    var fresh = shuffle(ids, rng);
+    var freshNotPicked = fresh.filter(function (id) { return !pickedAllSet[id]; });
+    var supplement = freshNotPicked.slice(0, Math.min(needed, freshNotPicked.length));
+    var supplementSet = {};
+    supplement.forEach(function (id) { supplementSet[id] = true; });
     var finalPicked = pickedAll.concat(supplement);
-    var nextDeck = newRoundPool.slice(supplement.length);
+    var nextDeck = fresh.filter(function (id) { return !supplementSet[id]; });
 
     return { picked: finalPicked, nextState: { round: round + 1, deck: nextDeck } };
   }
