@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>理科 記憶クイズ</title>
+<style>
+  /* ================= デザイントークン ================= */
+  :root {
+    --bg: #0f1220;
+    --bg-grad-1: #171b30;
+    --bg-grad-2: #0b0d18;
+    --surface: #1b1f36;
+    --surface-2: #232845;
+    --border: rgba(255,255,255,0.08);
+    --text: #eef0fb;
+    --text-dim: #a6acc9;
+    --accent-1: #7c6cff;
+    --accent-2: #38d0ff;
+    --accent-grad: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    --good: #34d399;
+    --good-bg: rgba(52,211,153,0.16);
+    --bad: #f87171;
+    --bad-bg: rgba(248,113,113,0.16);
+    --shadow: 0 10px 30px rgba(0,0,0,0.35);
+    --shadow-sm: 0 4px 14px rgba(0,0,0,0.25);
+    --radius-lg: 22px;
+    --radius-md: 16px;
+    --radius-sm: 10px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f3f5fb;
+      --bg-grad-1: #eef1fb;
+      --bg-grad-2: #ffffff;
+      --surface: #ffffff;
+      --surface-2: #f2f3fb;
+      --border: rgba(20,20,50,0.08);
+      --text: #1b1d2b;
+      --text-dim: #6a6e8d;
+      --accent-1: #6c5ce7;
+      --accent-2: #00b4d8;
+      --good: #17a672;
+      --good-bg: rgba(23,166,114,0.12);
+      --bad: #e0403f;
+      --bad-bg: rgba(224,64,63,0.12);
+      --shadow: 0 10px 30px rgba(30,30,60,0.08);
+      --shadow-sm: 0 4px 14px rgba(30,30,60,0.06);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", system-ui, -apple-system, sans-serif;
+    background:
+      radial-gradient(circle at 15% -10%, var(--accent-1) 0%, transparent 40%),
+      radial-gradient(circle at 110% 10%, var(--accent-2) 0%, transparent 35%),
+      linear-gradient(180deg, var(--bg-grad-1), var(--bg-grad-2));
+    background-attachment: fixed;
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 16px 16px 96px;
+    min-height: 100vh;
+  }
+
+  /* ================= ヘッダー ================= */
+  header.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 4px 20px;
+  }
+  header.app-header .logo {
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: var(--accent-grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  header.app-header .logo .sub {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    -webkit-text-fill-color: var(--text-dim);
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+  }
+
+  /* ================= ナビ ================= */
+  nav.tabbar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    justify-content: center;
+    padding: 10px max(10px, env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom));
+    z-index: 50;
+  }
+  nav.tabbar .inner {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+    max-width: 640px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 6px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(16px);
+  }
+  nav.tabbar button {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 8px 2px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  }
+  nav.tabbar button .icon { font-size: 1.1rem; }
+  nav.tabbar button.active {
+    background: var(--accent-grad);
+    color: #fff;
+  }
+  nav.tabbar button:active { transform: scale(0.94); }
+
+  /* ================= 汎用カード / ボタン ================= */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  h1, h2, h3 { margin: 0 0 12px; }
+  h2.section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  p.hint { color: var(--text-dim); font-size: 0.88rem; margin: 4px 0 14px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: #fff;
+    background: var(--accent-grad);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .btn:active { transform: translateY(0) scale(0.98); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn.secondary {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn.danger {
+    background: linear-gradient(135deg, #ff6161, #d63a3a);
+  }
+  .btn.block { width: 100%; }
+
+  /* ホームの統計グリッド */
+  .home-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .home-stat {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+  }
+  .home-stat .label { font-size: 0.72rem; color: var(--text-dim); font-weight: 600; }
+  .home-stat .value { font-size: 1.25rem; font-weight: 800; margin-top: 2px; word-break: break-word; }
+
+  /* ホームのモードカード */
+  .mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .mode-card {
+    grid-column: span 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 16px;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mode-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--accent-1); }
+  .mode-card:active { transform: translateY(0) scale(0.98); }
+  .mode-card .emoji { font-size: 1.8rem; }
+  .mode-card .title { font-weight: 800; font-size: 1.02rem; }
+  .mode-card .desc { font-size: 0.78rem; color: var(--text-dim); }
+
+  /* ================= 出題画面 ================= */
+  .progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .progress-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent-grad);
+    border-radius: 999px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+  }
+
+  .question-card {
+    text-align: center;
+    padding: 22px 6px 18px;
+  }
+  .question-card .unit-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent-1);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .question-card .qtext {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    word-break: break-word;
+  }
+  .explain-box {
+    margin-top: 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    text-align: left;
+  }
+  .explain-box b { color: var(--text); }
+
+  .choices {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .choice-btn {
+    text-align: left;
+    padding: 16px 18px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 0.98rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    word-break: break-word;
+  }
+  .choice-btn .idx {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .choice-btn:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--accent-1); }
+  .choice-btn:disabled { cursor: default; }
+  .choice-btn.correct {
+    background: var(--good-bg);
+    border-color: var(--good);
+    color: var(--good);
+  }
+  .choice-btn.correct .idx { background: var(--good); color: #fff; border-color: var(--good); }
+  .choice-btn.wrong {
+    background: var(--bad-bg);
+    border-color: var(--bad);
+    color: var(--bad);
+  }
+  .choice-btn.wrong .idx { background: var(--bad); color: #fff; border-color: var(--bad); }
+  .choice-btn.dim { opacity: 0.55; }
+
+  .next-wrap { margin-top: 18px; }
+
+  /* ================= 結果画面 ================= */
+  .score-hero {
+    text-align: center;
+    padding: 10px 0 4px;
+  }
+  .score-hero .big {
+    font-size: 2.6rem;
+    font-weight: 800;
+    background: var(--accent-grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .score-hero .pct { color: var(--text-dim); font-size: 0.95rem; margin-top: 4px; }
+
+  table.stat-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+  table.stat-table th, table.stat-table td {
+    text-align: left;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border);
+    word-break: break-word;
+  }
+  table.stat-table th {
+    color: var(--text-dim);
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  table.stat-table td.wrong-word { color: var(--bad); font-weight: 700; }
+  table.stat-table td.right-word { color: var(--good); font-weight: 700; }
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
+  .rate-pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+  .rate-high { background: var(--bad-bg); color: var(--bad); }
+  .rate-mid { background: rgba(250,204,21,0.16); color: #eab308; }
+  .rate-low { background: var(--good-bg); color: var(--good); }
+  .rate-none { background: var(--surface-2); color: var(--text-dim); }
+  .badge-recovering {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--good);
+    background: var(--good-bg);
+    border: 1px solid var(--good);
+    padding: 1px 8px;
+    border-radius: 999px;
+    margin-left: 6px;
+    white-space: nowrap;
+  }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-row .btn { flex: 1; min-width: 0; }
+
+  /* ================= フォーム / フィルタ ================= */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .field select {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  .field select:focus {
+    outline: none;
+    border-color: var(--accent-1);
+  }
+
+  /* ================= 単元別サマリー ================= */
+  .unit-row { margin-bottom: 12px; }
+  .unit-row .unit-row-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    margin-bottom: 4px;
+    gap: 8px;
+  }
+  .unit-row .unit-row-top .name { font-weight: 700; word-break: break-word; }
+  .unit-row .unit-row-top .rate { color: var(--text-dim); white-space: nowrap; }
+  .unit-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .unit-bar-fill {
+    height: 100%;
+    background: var(--accent-grad);
+    border-radius: 999px;
+  }
+
+  /* ================= 弱点リスト ================= */
+  .weak-row {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .weak-row:last-child { border-bottom: none; }
+  .weak-row .weak-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .weak-row .unit-tag-sm {
+    font-size: 0.68rem;
+    color: var(--accent-1);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 1px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .weak-row .weak-q { font-size: 0.9rem; font-weight: 700; margin: 4px 0; word-break: break-word; }
+  .weak-row .weak-a { font-size: 0.85rem; color: var(--good); font-weight: 600; word-break: break-word; }
+  .weak-row .weak-meta { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 96px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 18px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow);
+    font-size: 0.88rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 100;
+    max-width: 90%;
+    text-align: center;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 10px;
+    color: var(--text-dim);
+  }
+  .empty-state .emoji { font-size: 2.4rem; display: block; margin-bottom: 10px; }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  ::selection { background: var(--accent-1); color: #fff; }
+
+  @media (max-width: 360px) {
+    .question-card .qtext { font-size: 1.02rem; }
+    .home-stats { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<nav class="tabbar">
+  <div class="inner" id="tabbar-inner"></div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="questions.js"></script>
+<script>
+/* =====================================================================
+   理科 記憶クイズ - コアロジック（純粋関数・DOM/localStorage非依存）
+   Node からも require 相当（vm 経由）で検証できるように
+   module.exports / グローバル の両対応で公開する。
+   ===================================================================== */
+(function (root) {
+  "use strict";
+
+  /* -------------------- 汎用ヘルパー -------------------- */
+  function shuffle(arr, rng) {
+    var random = rng || Math.random;
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function escapeHtml(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  /* -------------------- 周回デッキ管理 -------------------- */
+  // rawState: { round, deck } | null/undefined
+  // allIds: 現在の QUESTIONS の id 一覧
+  // statsMap: { [id]: {attempts,...} }
+  // 戻り値: { round, deck }（サニタイズ済み・新規問題を織り込み済み）
+  function buildDeckState(rawState, allIds, statsMap) {
+    var ids = Array.isArray(allIds) ? allIds : [];
+    var stats = statsMap || {};
+    var idSet = {};
+    ids.forEach(function (id) { idSet[id] = true; });
+
+    var rawDeck = (rawState && Array.isArray(rawState.deck)) ? rawState.deck : [];
+    var deckSet = {};
+    var deck = [];
+    rawDeck.forEach(function (id) {
+      // 存在しない id（削除済み問題）は無視。重複も除去。
+      if (idSet[id] && !deckSet[id]) {
+        deckSet[id] = true;
+        deck.push(id);
+      }
+    });
+
+    var round = (rawState && typeof rawState.round === "number" && rawState.round >= 1) ? rawState.round : 1;
+
+    // stats にも deck にもない id（新規追加された問題）を今の deck に加える
+    var newIds = ids.filter(function (id) {
+      return !deckSet[id] && !Object.prototype.hasOwnProperty.call(stats, id);
+    });
+    deck = deck.concat(newIds);
+
+    return { round: round, deck: deck };
+  }
+
+  // state: { round, deck }（buildDeckState でサニタイズ済み想定）
+  // count: 1セットの問題数
+  // 戻り値: { picked: [id...], nextState: { round, deck } }
+  function pickSet(state, allIds, count, rng) {
+    var ids = Array.isArray(allIds) ? allIds : [];
+    var s = state || { round: 1, deck: [] };
+    var deck = Array.isArray(s.deck) ? s.deck.slice() : [];
+    var round = (typeof s.round === "number" && s.round >= 1) ? s.round : 1;
+    var n = Math.max(0, count || 0);
+
+    if (ids.length === 0 || n === 0) {
+      return { picked: [], nextState: { round: round, deck: deck } };
+    }
+
+    if (deck.length >= n) {
+      var shuffled = shuffle(deck, rng);
+      var picked = shuffled.slice(0, n);
+      var pickedSet = {};
+      picked.forEach(function (id) { pickedSet[id] = true; });
+      var remaining = deck.filter(function (id) { return !pickedSet[id]; });
+      return { picked: picked, nextState: { round: round, deck: remaining } };
+    }
+
+    // deck 不足 -> 残りを全部出し、新しい周のプールから補充
+    var pickedAll = deck.slice();
+    var pickedAllSet = {};
+    pickedAll.forEach(function (id) { pickedAllSet[id] = true; });
+    var needed = n - pickedAll.length;
+
+    var newRoundPool = shuffle(ids.filter(function (id) { return !pickedAllSet[id]; }), rng);
+    var supplement = newRoundPool.slice(0, Math.min(needed, newRoundPool.length));
+    var finalPicked = pickedAll.concat(supplement);
+    var nextDeck = newRoundPool.slice(supplement.length);
+
+    return { picked: finalPicked, nextState: { round: round + 1, deck: nextDeck } };
+  }
+
+  /* -------------------- 弱点分析 -------------------- */
+  // questions: [{id, unit, q, a, d, e}], statsMap: { [id]: {attempts, correct, wrong, lastCorrect, lastSeen} }
+  // 誤答が1回以上ある問題を、誤答率降順（同率は誤答回数降順）で返す
+  function computeWeakList(questions, statsMap) {
+    var qs = Array.isArray(questions) ? questions : [];
+    var stats = statsMap || {};
+    var rows = [];
+    qs.forEach(function (q) {
+      var s = stats[q.id];
+      if (s && s.wrong > 0 && s.attempts > 0) {
+        rows.push({
+          id: q.id,
+          unit: q.unit,
+          q: q.q,
+          a: q.a,
+          attempts: s.attempts,
+          wrong: s.wrong,
+          rate: s.wrong / s.attempts,
+          lastCorrect: !!s.lastCorrect
+        });
+      }
+    });
+    rows.sort(function (x, y) {
+      if (y.rate !== x.rate) return y.rate - x.rate;
+      return y.wrong - x.wrong;
+    });
+    return rows;
+  }
+
+  // 苦手問題復習モード用に、誤答率の高い順の実問題オブジェクトを最大 count 件返す
+  function computeReviewCandidates(questions, statsMap, count) {
+    var qs = Array.isArray(questions) ? questions : [];
+    var byId = {};
+    qs.forEach(function (q) { byId[q.id] = q; });
+    var weak = computeWeakList(qs, statsMap);
+    var n = Math.max(0, count || 0);
+    return weak.slice(0, n).map(function (row) { return byId[row.id]; }).filter(function (q) { return !!q; });
+  }
+
+  // 単元別の出題数・正答率サマリー
+  function computeUnitSummary(questions, statsMap, unitsOrder) {
+    var qs = Array.isArray(questions) ? questions : [];
+    var stats = statsMap || {};
+    var map = {};
+    qs.forEach(function (q) {
+      if (!map[q.unit]) map[q.unit] = { unit: q.unit, total: 0, attempts: 0, correct: 0 };
+      map[q.unit].total += 1;
+      var s = stats[q.id];
+      if (s) {
+        map[q.unit].attempts += s.attempts || 0;
+        map[q.unit].correct += s.correct || 0;
+      }
+    });
+    var order = (Array.isArray(unitsOrder) && unitsOrder.length) ? unitsOrder : Object.keys(map);
+    return order.filter(function (u) { return !!map[u]; }).map(function (u) {
+      var m = map[u];
+      return {
+        unit: u,
+        total: m.total,
+        attempts: m.attempts,
+        correct: m.correct,
+        rate: m.attempts > 0 ? m.correct / m.attempts : null
+      };
+    });
+  }
+
+  // 累計正答率（全問題横断）。出題実績がなければ null。
+  function computeOverallAccuracy(statsMap) {
+    var stats = statsMap || {};
+    var attempts = 0, correct = 0;
+    Object.keys(stats).forEach(function (id) {
+      var s = stats[id];
+      attempts += s.attempts || 0;
+      correct += s.correct || 0;
+    });
+    return attempts > 0 ? correct / attempts : null;
+  }
+
+  var Core = {
+    shuffle: shuffle,
+    escapeHtml: escapeHtml,
+    buildDeckState: buildDeckState,
+    pickSet: pickSet,
+    computeWeakList: computeWeakList,
+    computeReviewCandidates: computeReviewCandidates,
+    computeUnitSummary: computeUnitSummary,
+    computeOverallAccuracy: computeOverallAccuracy
+  };
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = Core;
+  } else {
+    root.ScienceQuizCore = Core;
+  }
+})(typeof window !== "undefined" ? window : this);
+
+/* =====================================================================
+   理科 記憶クイズ - アプリ本体（DOM / localStorage）
+   ブラウザ以外（Node の検証実行など）では document が無いため何もしない。
+   ===================================================================== */
+(function () {
+  if (typeof document === "undefined") return;
+  "use strict";
+
+  var Core = window.ScienceQuizCore;
+  var SET_SIZE = 15;
+
+  /* -------------------- localStorage ユーティリティ -------------------- */
+  var LS_STATS = "science_quiz_stats";
+  var LS_DECK = "science_quiz_deck";
+
+  function lsAvailable() {
+    try {
+      var t = "__science_quiz_test__";
+      window.localStorage.setItem(t, "1");
+      window.localStorage.removeItem(t);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  var HAS_LS = lsAvailable();
+
+  function lsGet(key, fallback) {
+    if (!HAS_LS) return fallback;
+    try {
+      var raw = window.localStorage.getItem(key);
+      if (!raw) return fallback;
+      var parsed = JSON.parse(raw);
+      return parsed == null ? fallback : parsed;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function lsSet(key, value) {
+    if (!HAS_LS) return false;
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function loadStats() { return lsGet(LS_STATS, {}); }
+  function saveStats(stats) { lsSet(LS_STATS, stats); }
+  function loadDeckRaw() { return lsGet(LS_DECK, null); }
+  function saveDeck(state) { lsSet(LS_DECK, state); }
+
+  var escapeHtml = Core.escapeHtml;
+
+  /* -------------------- 問題データのインデックス -------------------- */
+  var ALL_QUESTIONS = (typeof QUESTIONS !== "undefined") ? QUESTIONS : [];
+  var ALL_UNITS = (typeof UNITS !== "undefined") ? UNITS : [];
+  var QUESTIONS_BY_ID = {};
+  ALL_QUESTIONS.forEach(function (q) { QUESTIONS_BY_ID[q.id] = q; });
+  var ALL_IDS = ALL_QUESTIONS.map(function (q) { return q.id; });
+
+  function getSanitizedDeckState() {
+    var stats = loadStats();
+    var sanitized = Core.buildDeckState(loadDeckRaw(), ALL_IDS, stats);
+    saveDeck(sanitized);
+    return sanitized;
+  }
+
+  var toastTimer = null;
+  function showToast(msg) {
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove("show"); }, 2200);
+  }
+
+  /* ============================================================
+     アプリケーション状態
+     ============================================================ */
+  var state = {
+    screen: "home",       // home | quiz | result | reviewEmpty | weak | stats
+    mode: "set",          // set | review
+    questions: [],        // 出題順の問題オブジェクト配列
+    qIndex: 0,
+    answered: false,
+    selectedIdx: -1,
+    currentChoices: [],   // 選択肢テキストの配列
+    results: [],          // {id, unit, q, a, e, userAnswer, correct}
+    statsFilterUnit: ""   // 成績画面の単元フィルタ（"" = 全単元）
+  };
+
+  var NAV_ITEMS = [
+    { key: "home", label: "ホーム", icon: "🏠" },
+    { key: "set-entry", label: "15問", icon: "📝" },
+    { key: "review-entry", label: "復習", icon: "🔁" },
+    { key: "weak", label: "強化", icon: "🎯" },
+    { key: "stats", label: "成績", icon: "📊" }
+  ];
+
+  function currentActiveNavKey() {
+    if (state.screen === "quiz" || state.screen === "result") {
+      return state.mode === "review" ? "review-entry" : "set-entry";
+    }
+    if (state.screen === "reviewEmpty") return "review-entry";
+    return state.screen;
+  }
+
+  function renderNav() {
+    var wrap = document.getElementById("tabbar-inner");
+    wrap.innerHTML = "";
+    var activeKey = currentActiveNavKey();
+    NAV_ITEMS.forEach(function (item) {
+      var btn = document.createElement("button");
+      if (activeKey === item.key) btn.classList.add("active");
+      btn.innerHTML = '<span class="icon">' + item.icon + '</span><span>' + escapeHtml(item.label) + '</span>';
+      btn.addEventListener("click", function () {
+        if (item.key === "home") goHome();
+        else if (item.key === "set-entry") startSet();
+        else if (item.key === "review-entry") startReview();
+        else if (item.key === "weak") goWeak();
+        else if (item.key === "stats") goStats();
+      });
+      wrap.appendChild(btn);
+    });
+  }
+
+  /* ============================================================
+     画面: ホーム
+     ============================================================ */
+  function goHome() {
+    state.screen = "home";
+    render();
+  }
+
+  function modeCardHtml(target, emoji, title, desc) {
+    return '<button class="mode-card" data-target="' + target + '">' +
+      '<span class="emoji">' + emoji + '</span>' +
+      '<span class="title">' + escapeHtml(title) + '</span>' +
+      '<span class="desc">' + escapeHtml(desc) + '</span>' +
+      '</button>';
+  }
+
+  function renderHome() {
+    var stats = loadStats();
+    var deckState = getSanitizedDeckState();
+    var progressDone = ALL_IDS.length - deckState.deck.length;
+    var overallAcc = Core.computeOverallAccuracy(stats);
+    var accText = overallAcc == null ? "―" : Math.round(overallAcc * 100) + "%";
+
+    var html = "";
+    html += '<header class="app-header"><div class="logo">理科 記憶クイズ<span class="sub">中3 第4回ステップ模試 範囲</span></div></header>';
+
+    html += '<div class="card">';
+    html += '  <h2 class="section-title">📈 いまの状況</h2>';
+    html += '  <div class="home-stats">';
+    html += '    <div class="home-stat"><div class="label">全問題数</div><div class="value">' + ALL_IDS.length + '問</div></div>';
+    html += '    <div class="home-stat"><div class="label">現在の周回</div><div class="value">第' + deckState.round + '周</div></div>';
+    html += '    <div class="home-stat"><div class="label">今周の進み具合</div><div class="value">' + progressDone + ' / ' + ALL_IDS.length + '</div></div>';
+    html += '    <div class="home-stat"><div class="label">累計正答率</div><div class="value">' + accText + '</div></div>';
+    html += '  </div>';
+    html += '</div>';
+
+    html += '<div class="card">';
+    html += '  <h2 class="section-title">📚 モードを選ぶ</h2>';
+    html += '  <p class="hint">1セット15問。全問が周回で必ず出題されます。</p>';
+    html += '  <div class="mode-grid">';
+    html += modeCardHtml("start-set", "📝", "15問チャレンジ", "周回デッキから15問出題");
+    html += modeCardHtml("start-review", "🔁", "苦手を復習", "誤答率が高い順に最大15問");
+    html += modeCardHtml("weak", "🎯", "強化ポイント", "苦手な問題・単元を確認");
+    html += modeCardHtml("stats", "📊", "成績", "全問題の成績一覧");
+    html += '  </div>';
+    html += '</div>';
+
+    var app = document.getElementById("app");
+    app.innerHTML = html;
+
+    Array.prototype.forEach.call(app.querySelectorAll(".mode-card"), function (el) {
+      el.addEventListener("click", function () {
+        var target = el.getAttribute("data-target");
+        if (target === "start-set") startSet();
+        else if (target === "start-review") startReview();
+        else if (target === "weak") goWeak();
+        else if (target === "stats") goStats();
+      });
+    });
+  }
+
+  /* ============================================================
+     出題ロジック（共通: 15問チャレンジ / 苦手復習）
+     ============================================================ */
+  function startSet() {
+    var stats = loadStats();
+    var deckState = getSanitizedDeckState();
+    var result = Core.pickSet(deckState, ALL_IDS, SET_SIZE, Math.random);
+    saveDeck(result.nextState);
+    var picked = result.picked.map(function (id) { return QUESTIONS_BY_ID[id]; }).filter(function (q) { return !!q; });
+    beginRun("set", picked);
+  }
+
+  function startReview() {
+    var stats = loadStats();
+    var candidates = Core.computeReviewCandidates(ALL_QUESTIONS, stats, SET_SIZE);
+    if (candidates.length === 0) {
+      state.mode = "review";
+      state.screen = "reviewEmpty";
+      render();
+      return;
+    }
+    beginRun("review", candidates);
+  }
+
+  function beginRun(mode, questions) {
+    state.mode = mode;
+    state.questions = questions;
+    state.qIndex = 0;
+    state.answered = false;
+    state.selectedIdx = -1;
+    state.results = [];
+    state.currentChoices = buildChoices(questions[0]);
+    state.screen = "quiz";
+    render();
+  }
+
+  function buildChoices(q) {
+    var options = [q.a].concat(q.d || []);
+    return Core.shuffle(options, Math.random);
+  }
+
+  function renderReviewEmpty() {
+    var app = document.getElementById("app");
+    app.innerHTML =
+      '<header class="app-header"><div class="logo">苦手を復習<span class="sub">Review</span></div></header>' +
+      '<div class="card empty-state">' +
+      '  <span class="emoji">🎉</span>' +
+      '  <div>まだ誤答はありません。</div>' +
+      '  <p class="hint">15問チャレンジに挑戦して、間違えた問題がここに集まります。</p>' +
+      '  <button class="btn" id="btn-goto-set">15問チャレンジへ</button>' +
+      '</div>';
+    document.getElementById("btn-goto-set").addEventListener("click", startSet);
+  }
+
+  function renderQuiz() {
+    var q = state.questions[state.qIndex];
+    var total = state.questions.length;
+    var progressPct = Math.round((state.qIndex / total) * 100);
+    var title = state.mode === "review" ? "苦手を復習" : "15問チャレンジ";
+
+    var html = "";
+    html += '<header class="app-header"><div class="logo">' + escapeHtml(title) + '<span class="sub">' + (state.qIndex + 1) + ' / ' + total + '</span></div></header>';
+    html += '<div class="card">';
+    html += '  <div class="progress-wrap">';
+    html += '    <div class="progress-label">' + (state.qIndex + 1) + '/' + total + '</div>';
+    html += '    <div class="progress-bar"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>';
+    html += '  </div>';
+    html += '  <div class="question-card">';
+    html += '    <span class="unit-tag">' + escapeHtml(q.unit) + '</span>';
+    html += '    <div class="qtext">' + escapeHtml(q.q) + '</div>';
+    html += '  </div>';
+    html += '  <div class="choices" id="choices"></div>';
+    html += '  <div id="explain-wrap"></div>';
+    html += '  <div class="next-wrap" id="next-wrap"></div>';
+    html += '</div>';
+
+    var app = document.getElementById("app");
+    app.innerHTML = html;
+
+    requestAnimationFrame(function () {
+      var fill = document.getElementById("progress-fill");
+      if (fill) fill.style.width = progressPct + "%";
+    });
+
+    var choicesWrap = document.getElementById("choices");
+    state.currentChoices.forEach(function (choiceText, idx) {
+      var btn = document.createElement("button");
+      btn.className = "choice-btn";
+      btn.innerHTML = '<span class="idx">' + (idx + 1) + '</span><span>' + escapeHtml(choiceText) + '</span>';
+      btn.addEventListener("click", function () { handleAnswer(idx); });
+      choicesWrap.appendChild(btn);
+    });
+
+    if (state.answered) {
+      applyAnswerVisuals();
+      renderExplain();
+      renderNextButton();
+    }
+  }
+
+  function handleAnswer(idx) {
+    if (state.answered) return;
+    state.answered = true;
+    state.selectedIdx = idx;
+
+    var q = state.questions[state.qIndex];
+    var choiceText = state.currentChoices[idx];
+    var isCorrect = choiceText === q.a;
+
+    var stats = loadStats();
+    var s = stats[q.id] || { attempts: 0, correct: 0, wrong: 0, lastCorrect: false, lastSeen: 0 };
+    s.attempts += 1;
+    if (isCorrect) {
+      s.correct = (s.correct || 0) + 1;
+    } else {
+      s.wrong = (s.wrong || 0) + 1;
+    }
+    s.lastCorrect = isCorrect;
+    s.lastSeen = Date.now();
+    stats[q.id] = s;
+    saveStats(stats);
+
+    state.results.push({
+      id: q.id,
+      unit: q.unit,
+      q: q.q,
+      a: q.a,
+      e: q.e,
+      userAnswer: choiceText,
+      correct: isCorrect
+    });
+
+    applyAnswerVisuals();
+    renderExplain();
+    renderNextButton();
+  }
+
+  function applyAnswerVisuals() {
+    var q = state.questions[state.qIndex];
+    var choicesWrap = document.getElementById("choices");
+    if (!choicesWrap) return;
+    var buttons = choicesWrap.querySelectorAll(".choice-btn");
+    buttons.forEach(function (btn, idx) {
+      btn.disabled = true;
+      var choiceText = state.currentChoices[idx];
+      if (choiceText === q.a) {
+        btn.classList.add("correct");
+      } else if (idx === state.selectedIdx) {
+        btn.classList.add("wrong");
+      } else {
+        btn.classList.add("dim");
+      }
+    });
+  }
+
+  function renderExplain() {
+    var wrap = document.getElementById("explain-wrap");
+    if (!wrap) return;
+    var q = state.questions[state.qIndex];
+    var last = state.results[state.results.length - 1];
+    var html = "";
+    if (!last.correct) {
+      html += '<div class="explain-box"><b>正解: </b>' + escapeHtml(q.a) + '</div>';
+    }
+    if (q.e) {
+      html += '<div class="explain-box">' + escapeHtml(q.e) + '</div>';
+    }
+    wrap.innerHTML = html;
+  }
+
+  function renderNextButton() {
+    var wrap = document.getElementById("next-wrap");
+    if (!wrap) return;
+    var isLast = state.qIndex >= state.questions.length - 1;
+    var btn = document.createElement("button");
+    btn.className = "btn block";
+    btn.textContent = isLast ? "結果を見る" : "次へ";
+    btn.addEventListener("click", goNextQuestion);
+    wrap.innerHTML = "";
+    wrap.appendChild(btn);
+  }
+
+  function goNextQuestion() {
+    if (state.qIndex >= state.questions.length - 1) {
+      state.screen = "result";
+      render();
+      return;
+    }
+    state.qIndex += 1;
+    state.answered = false;
+    state.selectedIdx = -1;
+    state.currentChoices = buildChoices(state.questions[state.qIndex]);
+    render();
+  }
+
+  /* ============================================================
+     画面: 結果
+     ============================================================ */
+  function renderResult() {
+    var total = state.results.length;
+    var correctCount = state.results.filter(function (r) { return r.correct; }).length;
+    var pct = total ? Math.round((correctCount / total) * 100) : 0;
+    var wrongList = state.results.filter(function (r) { return !r.correct; });
+
+    var html = "";
+    html += '<header class="app-header"><div class="logo">結果<span class="sub">Result</span></div></header>';
+    html += '<div class="card score-hero">';
+    html += '  <div class="big">' + correctCount + ' / ' + total + '</div>';
+    html += '  <div class="pct">正答率 ' + pct + '%</div>';
+    html += '</div>';
+
+    if (wrongList.length > 0) {
+      html += '<div class="card">';
+      html += '  <h2 class="section-title">❌ 誤答一覧</h2>';
+      html += '  <div class="table-scroll"><table class="stat-table">';
+      html += '    <thead><tr><th>問題</th><th>正解</th><th>あなたの回答</th></tr></thead><tbody>';
+      wrongList.forEach(function (r) {
+        html += '<tr><td>' + escapeHtml(r.q) + '</td><td class="right-word">' + escapeHtml(r.a) + '</td><td class="wrong-word">' + escapeHtml(r.userAnswer) + '</td></tr>';
+      });
+      html += '  </tbody></table></div>';
+      html += '</div>';
+    } else {
+      html += '<div class="card empty-state"><span class="emoji">🎉</span><div>全問正解です！</div></div>';
+    }
+
+    html += '<div class="btn-row">';
+    html += '  <button class="btn secondary block" id="btn-home">ホームへ</button>';
+    html += '  <button class="btn block" id="btn-next">' + (state.mode === "review" ? "もう一度復習" : "次の15問") + '</button>';
+    html += '</div>';
+
+    var app = document.getElementById("app");
+    app.innerHTML = html;
+    document.getElementById("btn-home").addEventListener("click", goHome);
+    document.getElementById("btn-next").addEventListener("click", function () {
+      if (state.mode === "review") startReview(); else startSet();
+    });
+  }
+
+  /* ============================================================
+     画面: 強化ポイント
+     ============================================================ */
+  function goWeak() {
+    state.screen = "weak";
+    render();
+  }
+
+  function rateClass(rate) {
+    if (rate == null) return "rate-none";
+    if (rate >= 0.5) return "rate-high";
+    if (rate > 0) return "rate-mid";
+    return "rate-low";
+  }
+
+  function renderWeak() {
+    var stats = loadStats();
+    var unitSummary = Core.computeUnitSummary(ALL_QUESTIONS, stats, ALL_UNITS);
+    var weakList = Core.computeWeakList(ALL_QUESTIONS, stats);
+
+    var html = "";
+    html += '<header class="app-header"><div class="logo">強化ポイント<span class="sub">Weak Points</span></div></header>';
+
+    html += '<div class="card">';
+    html += '  <h2 class="section-title">📊 単元別の正答率</h2>';
+    unitSummary.forEach(function (u) {
+      var ratePct = u.rate == null ? "―" : Math.round(u.rate * 100) + "%";
+      var barWidth = u.rate == null ? 0 : Math.round(u.rate * 100);
+      html += '<div class="unit-row">';
+      html += '  <div class="unit-row-top"><span class="name">' + escapeHtml(u.unit) + '</span><span class="rate">' + ratePct + '（' + u.attempts + '回出題）</span></div>';
+      html += '  <div class="unit-bar"><div class="unit-bar-fill" style="width:' + barWidth + '%"></div></div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<div class="card">';
+    html += '  <h2 class="section-title">🎯 苦手問題（誤答率が高い順）</h2>';
+    if (weakList.length === 0) {
+      html += '  <div class="empty-state"><span class="emoji">🎉</span><div>まだ誤答はありません。</div></div>';
+    } else {
+      html += '  <p class="hint">誤答率の高い問題から表示しています。「克服中」は直近で正解できた問題です。</p>';
+      weakList.forEach(function (row) {
+        var ratePct = Math.round(row.rate * 100) + "%";
+        html += '<div class="weak-row">';
+        html += '  <div class="weak-top"><span class="unit-tag-sm">' + escapeHtml(row.unit) + '</span><span class="rate-pill ' + rateClass(row.rate) + '">誤答率 ' + ratePct + '</span></div>';
+        html += '  <div class="weak-q">' + escapeHtml(row.q) + '</div>';
+        html += '  <div class="weak-a">正解: ' + escapeHtml(row.a) + '</div>';
+        html += '  <div class="weak-meta">誤答 ' + row.wrong + ' / 出題 ' + row.attempts + '回' + (row.lastCorrect ? '<span class="badge-recovering">克服中</span>' : '') + '</div>';
+        html += '</div>';
+      });
+      html += '  <div class="btn-row"><button class="btn block" id="btn-goto-review">苦手を復習する（最大15問）</button></div>';
+    }
+    html += '</div>';
+
+    var app = document.getElementById("app");
+    app.innerHTML = html;
+    var btnReview = document.getElementById("btn-goto-review");
+    if (btnReview) btnReview.addEventListener("click", startReview);
+  }
+
+  /* ============================================================
+     画面: 成績
+     ============================================================ */
+  function goStats() {
+    state.screen = "stats";
+    render();
+  }
+
+  function renderStats() {
+    var stats = loadStats();
+    var filterUnit = state.statsFilterUnit;
+
+    var rows = ALL_QUESTIONS.filter(function (q) {
+      return !filterUnit || q.unit === filterUnit;
+    }).map(function (q) {
+      var s = stats[q.id];
+      var attempts = s ? s.attempts : 0;
+      var wrong = s ? s.wrong : 0;
+      var rate = (s && s.attempts > 0) ? s.wrong / s.attempts : null;
+      return { q: q, attempts: attempts, wrong: wrong, rate: rate };
+    });
+
+    var html = "";
+    html += '<header class="app-header"><div class="logo">成績<span class="sub">Statistics</span></div></header>';
+
+    html += '<div class="card">';
+    html += '  <div class="field"><label>単元で絞り込み</label><select id="unit-filter">';
+    html += '    <option value=""' + (filterUnit === "" ? " selected" : "") + '>全単元</option>';
+    ALL_UNITS.forEach(function (u) {
+      html += '    <option value="' + escapeHtml(u) + '"' + (filterUnit === u ? " selected" : "") + '>' + escapeHtml(u) + '</option>';
+    });
+    html += '  </select></div>';
+    html += '  <div class="table-scroll"><table class="stat-table">';
+    html += '    <thead><tr><th>単元</th><th>問題</th><th>正解</th><th>出題</th><th>誤答</th><th>誤答率</th></tr></thead><tbody>';
+    rows.forEach(function (r) {
+      var ratePct = r.rate == null ? "―" : Math.round(r.rate * 100) + "%";
+      html += '<tr>' +
+        '<td>' + escapeHtml(r.q.unit) + '</td>' +
+        '<td>' + escapeHtml(r.q.q) + '</td>' +
+        '<td>' + escapeHtml(r.q.a) + '</td>' +
+        '<td>' + r.attempts + '</td>' +
+        '<td>' + r.wrong + '</td>' +
+        '<td><span class="rate-pill ' + rateClass(r.rate) + '">' + ratePct + '</span></td>' +
+        '</tr>';
+    });
+    html += '  </tbody></table></div>';
+    html += '</div>';
+
+    html += '<div class="card">';
+    html += '  <button class="btn danger block" id="btn-reset-stats">成績をリセット</button>';
+    html += '</div>';
+
+    var app = document.getElementById("app");
+    app.innerHTML = html;
+
+    document.getElementById("unit-filter").addEventListener("change", function (e) {
+      state.statsFilterUnit = e.target.value;
+      renderStats();
+    });
+
+    document.getElementById("btn-reset-stats").addEventListener("click", function () {
+      if (window.confirm("すべての成績をリセットします。よろしいですか？")) {
+        saveStats({});
+        showToast("成績をリセットしました");
+        renderStats();
+      }
+    });
+  }
+
+  /* ============================================================
+     ルーティング / 再描画
+     ============================================================ */
+  function render() {
+    renderNav();
+    switch (state.screen) {
+      case "home": renderHome(); break;
+      case "quiz": renderQuiz(); break;
+      case "result": renderResult(); break;
+      case "reviewEmpty": renderReviewEmpty(); break;
+      case "weak": renderWeak(); break;
+      case "stats": renderStats(); break;
+      default: renderHome();
+    }
+  }
+
+  // 初期表示
+  render();
+})();
+</script>
+</body>
+</html>
